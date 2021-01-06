@@ -2,3 +2,4 @@ album_cover.jpg
 .cache-*
 *.log
 log.json
+__pycache__

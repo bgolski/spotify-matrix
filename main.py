@@ -1,4 +1,3 @@
-#!python
 import sys
 import spotipy as spotipy
 import spotipy.util as util
@@ -8,6 +7,16 @@ import logging
 import urllib
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
 from displayAlbumArtwork import displayAlbumArtwork
+import busio
+from writeToDisplay import *
+
+# Create the I2C interface.
+i2c = busio.I2C(SCL, SDA)
+
+# Create the SSD1306 OLED class.
+# The first two parameters are the pixel width and pixel height.  Change these
+# to the right size for your display!
+disp = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c)
 
 # Configure RGB matrix
 options = RGBMatrixOptions()
@@ -15,8 +24,7 @@ options.rows = 64
 options.cols = 64
 options.chain_length = 1
 options.parallel = 1
-options.pwm_bits = 11
-options.gpio_slowdown = 4
+options.gpio_slowdown = 2
 options.hardware_mapping = 'regular'  # If you have an Adafruit HAT: 'adafruit-hat'
 
 matrix = RGBMatrix(options = options)
@@ -59,7 +67,7 @@ if token:
         currentId = ""
         while True:
             currentSong = sp.currently_playing()
-            if currentSong:
+            if type(currentSong) is not None:
                 songId = str(currentSong["item"]["id"])
                 if songId != currentId:
                     currentId = songId
@@ -67,6 +75,8 @@ if token:
                     saveImage(imageUrl)
                     songName = currentSong["item"]["name"]
                     displayAlbumArtwork(matrix)
+                    clearDisplay(disp)
+                    writeAlbumTitle(disp, songName)
                     print(songName)
                     print(getAlbumInfo(currentSong))
                     logging.info(f"{songName}:\t{getAlbumInfo(currentSong)}")

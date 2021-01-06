@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# from rgbmatrix import RGBMatrix, RGBMatrixOptions
+from rgbmatrix import RGBMatrix, RGBMatrixOptions
 from PIL import Image
 
 # if len(sys.argv) < 2:
@@ -9,7 +9,7 @@ from PIL import Image
 #     image_file = sys.argv[1]
 
 def displayAlbumArtwork(matrix: RGBMatrix):
-    with open('album_cover.jpg', 'r') as image_file:
+    with open('album_cover.jpg', 'rb') as image_file:
         image = Image.open(image_file)
 
         # Make image fit our screen.
