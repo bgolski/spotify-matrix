@@ -1,10 +1,27 @@
+#!python
 import sys
-import spotipy
+import spotipy as spotipy
 import spotipy.util as util
 import json
 import time
 import logging
 import urllib
+from rgbmatrix import RGBMatrix, RGBMatrixOptions
+from displayAlbumArtwork import displayAlbumArtwork
+
+# Configure RGB matrix
+options = RGBMatrixOptions()
+options.rows = 64
+options.cols = 64
+options.chain_length = 1
+options.parallel = 1
+options.pwm_bits = 11
+options.gpio_slowdown = 4
+options.hardware_mapping = 'regular'  # If you have an Adafruit HAT: 'adafruit-hat'
+
+matrix = RGBMatrix(options = options)
+
+
 if len(sys.argv) > 1:
     username = sys.argv[1]
 else:
@@ -49,6 +66,7 @@ if token:
                     imageUrl = getImageUrl(currentSong)
                     saveImage(imageUrl)
                     songName = currentSong["item"]["name"]
+                    displayAlbumArtwork(matrix)
                     print(songName)
                     print(getAlbumInfo(currentSong))
                     logging.info(f"{songName}:\t{getAlbumInfo(currentSong)}")
