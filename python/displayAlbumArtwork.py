@@ -10,3 +10,11 @@ def displayAlbumArtwork(matrix: RGBMatrix):
         # Make image fit our screen.
         image.thumbnail((matrix.width, matrix.height), Image.ANTIALIAS)
         matrix.SetImage(image.convert('RGB'))
+
+def displayDefaultImage(matrix: RGBMatrix):
+    with open('../images/DefaultImage.png', 'rb') as image_file:
+        image = Image.open(image_file)
+
+        # Make image fit our screen.
+        image.thumbnail((matrix.width, matrix.height), Image.ANTIALIAS)
+        matrix.SetImage(image.convert('RGB'))

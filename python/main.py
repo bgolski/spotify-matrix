@@ -6,9 +6,10 @@ import time
 import logging
 import urllib
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
-from displayAlbumArtwork import displayAlbumArtwork
+from displayAlbumArtwork import *
 import busio
 from writeToDisplay import *
+import threading
 
 # Create the I2C interface.
 i2c = busio.I2C(SCL, SDA)
@@ -24,7 +25,7 @@ options.rows = 64
 options.cols = 64
 options.chain_length = 1
 options.parallel = 1
-options.gpio_slowdown = 2
+options.gpio_slowdown = 4
 options.hardware_mapping = 'regular'  # If you have an Adafruit HAT: 'adafruit-hat'
 
 matrix = RGBMatrix(options = options)
@@ -58,33 +59,48 @@ def saveImage(url):
 def getAlbumInfo(currentSong):
     albumName = currentSong["item"]["album"]["name"]
     artistName = currentSong["item"]["artists"][0]["name"]
-    return(albumName + " - " + artistName)
+    return(artistName + " - " + albumName)
 
+def update_screen(disp: adafruit_ssd1306.SSD1306_I2C, album: str):
+    screen_thread = threading.Thread(target=writeAlbumTitle, name=f"{album.split(':')[0]}Thread", args=(disp, album, ))
+    screen_thread.start()
 
 if token:
     try:
         sp = spotipy.Spotify(auth=token)
         currentId = ""
+        albumThreadStop = threading.Event()
         while True:
             currentSong = sp.currently_playing()
             if type(currentSong) is not None:
-                songId = str(currentSong["item"]["id"])
-                if songId != currentId:
-                    currentId = songId
-                    imageUrl = getImageUrl(currentSong)
-                    saveImage(imageUrl)
-                    songName = currentSong["item"]["name"]
-                    displayAlbumArtwork(matrix)
-                    clearDisplay(disp)
-                    writeAlbumTitle(disp, songName)
-                    print(songName)
-                    print(getAlbumInfo(currentSong))
-                    logging.info(f"{songName}:\t{getAlbumInfo(currentSong)}")
+                try:
+                    songId = str(currentSong["item"]["id"])
+                    if songId != currentId:
+                        albumThreadStop.set()
+                        currentId = songId
+                        imageUrl = getImageUrl(currentSong)
+                        saveImage(imageUrl)
+                        songName = currentSong["item"]["name"]
+                        displayAlbumArtwork(matrix)
+                        clearDisplay(disp)
+                        albumThreadStop.clear()
+                        screen_thread = threading.Thread(target=writeAlbumTitle, name=f"{songName}Thread", args=(disp, f"{songName}:    {getAlbumInfo(currentSong)}", albumThreadStop))
+                        screen_thread.start()
+                        print(songName)
+                        print(getAlbumInfo(currentSong))
+                        logging.info(f"{songName}:\t{getAlbumInfo(currentSong)}")
+                except TypeError as error:
+                    albumThreadStop.set()
+                    displayDefaultImage(matrix)
+                    time.sleep(5)
+                    print(error)
             else:
                 print("No song playing")
             time.sleep(5)
     except TypeError as error:
         print(error)
+        clearDisplay(disp)
+        time.sleep(10)
         sys.exit()
 
 else:
