@@ -65,7 +65,6 @@ def writeAlbumTitle(disp: adafruit_ssd1306.SSD1306_I2C, songName: str, artistAnd
 
 
 def defaultScreen(disp: adafruit_ssd1306.SSD1306_I2C):
-    clearDisplay(disp)
     width = 128
     height = 64
     image = Image.open("../images/SpotifyCode.jpg")
