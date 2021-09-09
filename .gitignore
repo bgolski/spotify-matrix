@@ -3,3 +3,4 @@ album_cover.jpg
 *.log
 log.json
 __pycache__
+led-image-viewer

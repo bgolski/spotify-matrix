@@ -1,3 +1,5 @@
+# Main script
+
 import sys
 import spotipy as spotipy
 import spotipy.util as util
@@ -11,23 +13,26 @@ import os
 from writeToDisplay import *
 import threading
 
-
-def getImageUrl(currentSong): 
+# grabs the image url to display from Spotify API
+def getImageUrl(currentSong):
     with open("../logs/log.json", 'w+') as temp:
         temp.write(json.dumps(currentSong, indent=4))
     images = currentSong["item"]["album"]["images"]
     url = images[-1]['url']
     return url
 
+# saves image inside of file inside of images folder
 def saveImage(url):
     albumCover = urllib.request.urlopen(url)
     with open ("../images/album_cover.jpg", 'wb') as temp:
         temp.write(albumCover.read())
 
+# Parses song information to log
 def getAlbumInfo(currentSong):
     albumName = currentSong["item"]["album"]["name"]
     artistName = currentSong["item"]["artists"][0]["name"]
     return(artistName + " - " + albumName)
+
 
 def update_screen(disp: adafruit_ssd1306.SSD1306_I2C, album: str):
     screen_thread = threading.Thread(target=writeAlbumTitle, name=f"{album.split(':')[0]}Thread", args=(disp, album, ))
@@ -44,7 +49,7 @@ disp = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c)
 if len(sys.argv) > 1:
     username = sys.argv[1]
 else:
-    print('Usage %s Username ' % (sys.argv[0],))
+    print('Usage: %s Username ' % (sys.argv[0],))
     sys.exit()
 
 scope = 'user-read-currently-playing'
@@ -59,6 +64,7 @@ if token:
         sp = spotipy.Spotify(auth=token)
         currentId = ""
         screenIsClear = True
+        currentImageUrl = ""
         albumThreadStop = threading.Event()
         while True:
             currentSong = sp.currently_playing()
@@ -70,9 +76,11 @@ if token:
                         albumThreadStop.set()
                         currentId = songId
                         imageUrl = getImageUrl(currentSong)
-                        saveImage(imageUrl)
+                        if not imageUrl == currentImageUrl:
+                            saveImage(imageUrl)
+                            currentImageUrl = imageUrl
+                            os.system("sudo ../scripts/showImage.sh")
                         songName = currentSong["item"]["name"]
-                        os.system("sudo ../scripts/showImage.sh")
                         clearDisplay(disp)
                         albumThreadStop.clear()
                         screen_thread = threading.Thread(target=writeAlbumTitle, name=f"{songName}Thread", args=(disp, songName, getAlbumInfo(currentSong), albumThreadStop))
@@ -90,8 +98,10 @@ if token:
                     clearDisplay(disp)
                     screenIsClear = True
                 defaultScreen(disp)
-                os.system("sudo ../scripts/showImage.sh")
-            time.sleep(10)
+                os.system("sudo ../scripts/clearScreen.sh")
+                time.sleep(7)
+            time.sleep(3)
+
     except TypeError as error:
         mos.system("sudo ../scripts/showImage.sh")
         clearDisplay(disp)
